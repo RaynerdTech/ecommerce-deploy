@@ -6,7 +6,12 @@ const { verify } = require('../middleware/verify'); // Import your authenticatio
 const addToCart = async (req, res) => {
     try {
         const { productId, quantity } = req.body;
-        const userId = req.user.id; // Assuming the user ID is available through the token (from `verify` middleware)
+
+        if (!productId || !quantity) {
+            return res.status(400).json({ message: "Product ID and quantity are required" });
+        }
+
+        const userId = req.user.id; // Assuming the user ID is available through the token
 
         // Find the product
         const product = await Product.findById(productId);
@@ -16,9 +21,8 @@ const addToCart = async (req, res) => {
 
         // Check stock availability
         if (product.stock < quantity) {
-            return res.status(400).json({ message: 'Not enough stock available' });
+            return res.status(400).json({ message: "Not enough stock available" });
         }
-
 
         // Find the user's cart
         let cart = await Cart.findOne({ userId });
@@ -28,25 +32,28 @@ const addToCart = async (req, res) => {
             cart = new Cart({
                 userId,
                 items: [],
-                totalPrice: 0
+                totalPrice: 0,
             });
         }
 
         // Check if product already exists in the cart
-        const existingItemIndex = cart.items.findIndex(item => item.productId.toString() === productId);
+        const existingItemIndex = cart.items.findIndex(
+            (item) => item.productId.toString() === productId
+        );
 
         if (existingItemIndex !== -1) {
             // If product already exists in cart, update the quantity and price
             cart.items[existingItemIndex].quantity += quantity;
-            cart.items[existingItemIndex].price = cart.items[existingItemIndex].quantity * product.price;
+            cart.items[existingItemIndex].price =
+                cart.items[existingItemIndex].quantity * product.price;
         } else {
             // If product is not in the cart, add it as a new item
             const newItem = {
                 productId: product._id,
+                name: product.name,  // Include product name
+                image: product.image, // Include product image
                 quantity,
                 price: quantity * product.price,
-                name: product.name,  // Include product name
-                image: product.image  // Include product image
             };
             cart.items.push(newItem);
         }
@@ -56,13 +63,14 @@ const addToCart = async (req, res) => {
 
         // Save the cart
         const updatedCart = await cart.save();
-    
+
         res.status(200).json({ message: "Product added to cart", cart: updatedCart });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error adding product to cart" });
+        res.status(500).json({ message: "Error adding product to cart", error: error.message });
     }
 };
+
 
 
 //VIEW CART
