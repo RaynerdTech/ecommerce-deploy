@@ -13,7 +13,7 @@ const addToCart = async (req, res) => {
 
         const userId = req.user.id; // Assuming the user ID is available through the token
 
-        // Find the product
+        // Find the product and populate the name and image fields
         const product = await Product.findById(productId);
         if (!product) {
             return res.status(404).json({ message: "Product not found" });
@@ -25,7 +25,7 @@ const addToCart = async (req, res) => {
         }
 
         // Find the user's cart
-        let cart = await Cart.findOne({ userId });
+        let cart = await Cart.findOne({ userId }).populate('items.productId', 'name image'); // Populate name and image
 
         if (!cart) {
             // Create a new cart for the user if it doesn't exist
@@ -50,8 +50,6 @@ const addToCart = async (req, res) => {
             // If product is not in the cart, add it as a new item
             const newItem = {
                 productId: product._id,
-                name: product.name,  // Include product name
-                image: product.image, // Include product image
                 quantity,
                 price: quantity * product.price,
             };
@@ -70,6 +68,7 @@ const addToCart = async (req, res) => {
         res.status(500).json({ message: "Error adding product to cart", error: error.message });
     }
 };
+
 
 
 
