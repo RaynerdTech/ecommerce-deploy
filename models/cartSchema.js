@@ -16,14 +16,14 @@ const cartItemSchema = new mongoose.Schema({
         type: Number, 
         required: true,                           
     },  
-    name: { // Add product name
-        type: String,
-        required: true,
-    },
-    image: { // Add product image
-        type: String,
-        required: true,
-    },
+    // name: { // Add product name
+    //     type: String,
+    //     required: true,
+    // },
+    // image: { // Add product image
+    //     type: String,
+    //     required: true,
+    // },
 });
 
 const cartSchema = new mongoose.Schema({
