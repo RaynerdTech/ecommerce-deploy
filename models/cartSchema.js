@@ -6,37 +6,37 @@ const cartItemSchema = new mongoose.Schema({
         ref: 'Product',
         required: true,
     },
+    name: {
+        type: String,
+        required: true, // Product name
+    },
+    image: {
+        type: String,
+        required: true, // Product image URL
+    },
     quantity: {
         type: Number,
         required: true,
         min: 1, // Ensure quantity is at least 1
-        default: 1
+        default: 1,
     },
     price: {
-        type: Number, 
+        type: Number,
         required: true,                           
     },  
-    name: { // Add product name
-        type: String,
-        required: true,
-    },
-    image: { // Add product image
-        type: String,
-        required: true,
-    },
 });
 
 const cartSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
     },
     items: [cartItemSchema], // Array of cart items
     totalPrice: {
         type: Number,
         required: true,
-        default: 0
+        default: 0,
     },
 }, { timestamps: true });
 
