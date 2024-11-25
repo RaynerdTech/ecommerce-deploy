@@ -11,9 +11,9 @@ const addToCart = async (req, res) => {
             return res.status(400).json({ message: "Product ID and quantity are required" });
         }
 
-        const userId = req.user.id; // Assuming the user ID is available through the token
+        const userId = req.user.id; // User ID from token
 
-        // Find the product and populate the name and image fields
+        // Find the product
         const product = await Product.findById(productId);
         if (!product) {
             return res.status(404).json({ message: "Product not found" });
@@ -24,30 +24,24 @@ const addToCart = async (req, res) => {
             return res.status(400).json({ message: "Not enough stock available" });
         }
 
-        // Find the user's cart
-        let cart = await Cart.findOne({ userId }).populate('items.productId', 'name image'); // Populate name and image
-
+        // Find or create the user's cart
+        let cart = await Cart.findOne({ userId });
         if (!cart) {
-            // Create a new cart for the user if it doesn't exist
-            cart = new Cart({
-                userId,
-                items: [],
-                totalPrice: 0,
-            });
+            cart = new Cart({ userId, items: [], totalPrice: 0 });
         }
 
-        // Check if product already exists in the cart
-        const existingItemIndex = cart.items.findIndex(
-            (item) => item.productId.toString() === productId
+        // Check if product exists in cart
+        const existingItemIndex = cart.items.findIndex((item) =>
+            item.productId.toString() === productId
         );
 
         if (existingItemIndex !== -1) {
-            // If product already exists in cart, update the quantity and price
-            cart.items[existingItemIndex].quantity += quantity;
-            cart.items[existingItemIndex].price =
-                cart.items[existingItemIndex].quantity * product.price;
+            // Product exists, update quantity and price
+            const existingItem = cart.items[existingItemIndex];
+            existingItem.quantity += quantity;
+            existingItem.price = existingItem.quantity * product.price;
         } else {
-            // If product is not in the cart, add it as a new item
+            // Product does not exist, add as new item
             const newItem = {
                 productId: product._id,
                 quantity,
@@ -56,18 +50,22 @@ const addToCart = async (req, res) => {
             cart.items.push(newItem);
         }
 
-        // Update the total price of the cart
+        // Update total cart price
         cart.totalPrice = cart.items.reduce((acc, item) => acc + item.price, 0);
 
-        // Save the cart
+        // Save updated cart
         const updatedCart = await cart.save();
 
-        res.status(200).json({ message: "Product added to cart", cart: updatedCart });
+        // Populate response with product details
+        const populatedCart = await updatedCart.populate('items.productId', 'name image');
+
+        res.status(200).json({ message: "Product added to cart", cart: populatedCart });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error adding product to cart", error: error.message });
     }
 };
+
 
 
 
