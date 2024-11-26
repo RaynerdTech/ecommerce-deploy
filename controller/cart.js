@@ -57,7 +57,10 @@ const addToCart = async (req, res) => {
         const updatedCart = await cart.save();
 
         // Populate response with product details
-        const populatedCart = await updatedCart.populate('items.productId', 'name image');
+        const populatedCart = await Cart.findById(updatedCart._id).populate(
+            'items.productId',
+            'name image price'
+        );
 
         res.status(200).json({ message: "Product added to cart", cart: populatedCart });
     } catch (error) {
@@ -65,7 +68,6 @@ const addToCart = async (req, res) => {
         res.status(500).json({ message: "Error adding product to cart", error: error.message });
     }
 };
-
 
 
 
