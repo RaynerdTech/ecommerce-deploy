@@ -154,7 +154,6 @@ const decreaseProductQuantity = async (req, res) => {
             cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
 
             await cart.save();
-            res.status(200).json({ message: 'Product quantity decreased by 1', cart });
         } else {
             // If quantity is 1, remove the product from cart
             cart.items.splice(itemIndex, 1);
@@ -163,10 +162,15 @@ const decreaseProductQuantity = async (req, res) => {
             cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
 
             await cart.save();
-            res.status(200).json({ message: 'Product removed from cart', cart });
         }
 
+        // Populate product details (name, image, etc.)
+        const updatedCart = await Cart.findById(cart._id).populate('items.productId', 'name image');
+
+        res.status(200).json({ message: 'Product quantity decreased by 1', cart: updatedCart });
+
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to update product quantity in cart' });
     }
 };
