@@ -34,7 +34,7 @@ const productQuery = async (req, res) => {
       let query = {}; // Initialize an empty query object to build dynamic queries
   
       // Build the query object dynamically based on the query parameters
-      if (name) query.name = name; // If 'name' query parameter is provided, add it to the query object
+      if (name) query.name = { $regex: name, $options: 'i' }; // Partial match for 'name', case-insensitive
       if (category) query.category = category; // If 'category' query parameter is provided, add it to the query object
       if (brand) query.brand = brand; // If 'brand' query parameter is provided, add it to the query object
       if (price) {
