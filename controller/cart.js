@@ -1,6 +1,7 @@
 const Cart = require('../models/cartSchema'); // Import the Cart model
-const Product = require('../models/productSchema'); // Import the Product model
-const { verify } = require('../middleware/verify'); // Import your authentication middleware if needed
+const Product = require('../models/productSchema'); 
+// const Payment = require('../models/payment'); 
+const axios = require('axios');
 
 
 const addToCart = async (req, res) => {
@@ -180,7 +181,6 @@ const decreaseProductQuantity = async (req, res) => {
 
 
 
-
 //CLEAR ENTIRE CART ONCE
 const clearCart = async (req, res) => {
     const userId = req.user.id; // Assuming user is logged in
@@ -206,6 +206,38 @@ const clearCart = async (req, res) => {
 
 
 
+      
 
 
-module.exports = { addToCart, viewCart, removeFromCart, decreaseProductQuantity, clearCart };
+const initiatePayment = async (req, res) => {
+    try {
+        const { amount, currency, customer, meta, customizations } = req.body;
+
+        const flutterwaveResponse = await axios.post(
+            'https://api.flutterwave.com/v3/payments',
+            {
+                tx_ref: `TX-${Date.now()}`,
+                amount,
+                currency,
+                payment_options: 'card, mobilemoney, ussd',
+                customer,
+                meta,
+                customizations,
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        res.json({ checkoutUrl: flutterwaveResponse.data.data.link });
+    } catch (error) {
+        console.error('Error initiating payment:', error.response?.data || error.message);
+        res.status(500).json({ message: 'Error initiating payment' });
+    }
+};
+
+
+module.exports = { addToCart, viewCart, removeFromCart, decreaseProductQuantity, clearCart, initiatePayment };
