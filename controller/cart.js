@@ -209,24 +209,11 @@ const clearCart = async (req, res) => {
       
 
 
+
 const initiatePayment = async (req, res) => {
-    //Check if user is logged in
-    if (!req.user) {
-        return res.status(401).json({ message: 'You must be logged in to initiate payment' });
-    }
-
-    const userId = req.user.id; // Get logged-in user ID
-    const { amount, currency, customer, meta, customizations } = req.body;
-
     try {
-        //Optionally, you can fetch cart details for the logged-in user
-        const cart = await Cart.findOne({ userId });
+        const { amount, currency, customer, meta, customizations } = req.body;
 
-        if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
-        }
-
-        // Proceed with payment initiation
         const flutterwaveResponse = await axios.post(
             'https://api.flutterwave.com/v3/payments',
             {
@@ -242,8 +229,7 @@ const initiatePayment = async (req, res) => {
                 headers: {
                     Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
                     'Content-Type': 'application/json',
-                },
-                credentials: true
+                }
             }
         );
 
@@ -253,7 +239,6 @@ const initiatePayment = async (req, res) => {
         res.status(500).json({ message: 'Error initiating payment' });
     }
 };
-
 
 
 module.exports = { addToCart, viewCart, removeFromCart, decreaseProductQuantity, clearCart, initiatePayment };
