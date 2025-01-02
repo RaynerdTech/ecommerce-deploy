@@ -9,7 +9,7 @@ router.get('/cart', verify, viewCart); // View the user's cart
 router.delete('/remove-a-product', verify, removeFromCart); // Remove items from the cart
 router.post('/cart-decrease', verify, decreaseProductQuantity);
 router.delete('/clear-cart', verify, clearCart);
-router.post('/initiate-payment', initiatePayment); // Start payment
+router.post('/initiate-payment', verify, initiatePayment); // Start payment
 
 
 module.exports = router;
