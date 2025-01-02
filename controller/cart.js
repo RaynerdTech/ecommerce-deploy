@@ -210,35 +210,83 @@ const clearCart = async (req, res) => {
 
 
 
+const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY;
+
+// Initiate Payment
 const initiatePayment = async (req, res) => {
-    try {
-        const { amount, currency, customer, meta, customizations } = req.body;
+  try {
+    const { amount, currency, email, phone, fullName, redirectUrl } = req.body;
 
-        const flutterwaveResponse = await axios.post(
-            'https://api.flutterwave.com/v3/payments',
-            {
-                tx_ref: `TX-${Date.now()}`,
-                amount,
-                currency,
-                payment_options: 'card, mobilemoney, ussd',
-                customer,
-                meta,
-                customizations,
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
+    const payload = {
+      tx_ref: `TX-${Date.now()}`, // Unique transaction reference
+      amount,
+      currency,
+      customer: {
+        email,
+        phonenumber: phone,
+        name: fullName,
+      },
+      redirect_url: redirectUrl,
+    };
 
-        res.json({ checkoutUrl: flutterwaveResponse.data.data.link });
-    } catch (error) {
-        console.error('Error initiating payment:', error.response?.data || error.message);
-        res.status(500).json({ message: 'Error initiating payment' });
+    const response = await axios.post(
+      "https://api.flutterwave.com/v3/payments",
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET_KEY}`,
+        },
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment link generated successfully.",
+      data: response.data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Payment initiation failed.",
+      error: error.message,
+    });
+  }
+};
+
+// Verify Payment
+const verifyPayment = async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+
+    const response = await axios.get(
+      `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`,
+      {
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET_KEY}`,
+        },
+      }
+    );
+
+    if (response.data.status === "success") {
+      res.status(200).json({
+        success: true,
+        message: "Payment verified successfully.",
+        data: response.data,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Payment verification failed.",
+      });
     }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Payment verification failed.",
+      error: error.message,
+    });
+  }
 };
 
 
-module.exports = { addToCart, viewCart, removeFromCart, decreaseProductQuantity, clearCart, initiatePayment };
+module.exports = { addToCart, viewCart, removeFromCart, decreaseProductQuantity, clearCart, initiatePayment, verifyPayment };
