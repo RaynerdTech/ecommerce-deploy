@@ -21,7 +21,7 @@ app.use(
     origin: ["http://127.0.0.1:5500"], // Allow frontend origin
     credentials: true, // Allow cookies to be sent and received
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
-    allowedHeaders: ["Content-Type", "Authorization"], // Add headers you expect
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"] // Add headers you expect
   })
 );
 
