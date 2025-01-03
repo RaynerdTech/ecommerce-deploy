@@ -18,7 +18,7 @@ app.use(cookieParser());
 // CORS configuration - allow specific origin and credentials
 app.use(
   cors({
-    origin: "http://127.0.0.1:5500", // Replace with your frontend URL
+    origin: ["http://127.0.0.1:5500"], // Allow frontend origin
     credentials: true, // Allow cookies to be sent and received
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
     allowedHeaders: ["Content-Type", "Authorization"], // Add headers you expect
