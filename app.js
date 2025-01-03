@@ -20,6 +20,8 @@ app.use(
   cors({
     origin: "http://127.0.0.1:5500", // Replace with your frontend URL
     credentials: true, // Allow cookies to be sent and received
+    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Add headers you expect
   })
 );
 
