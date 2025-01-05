@@ -24,7 +24,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "Accept"] // Add headers you expect
   })
 );
-
+ 
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URL)
