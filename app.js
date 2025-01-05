@@ -18,7 +18,10 @@ app.use(cookieParser());
 // CORS configuration - allow specific origin and credentials
 app.use(
   cors({
-    origin: "https://at.raynerd.com.ng", // Allow frontend origin
+    origin: [
+      "https://at.raynerd.com.ng", // Allow production frontend
+      "http://127.0.0.1:5500" // Allow local testing
+    ],
     credentials: true, // Allow cookies to be sent and received
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
     allowedHeaders: ["Content-Type", "Authorization", "Accept"] // Add headers you expect
