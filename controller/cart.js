@@ -209,13 +209,19 @@ const clearCart = async (req, res) => {
       
 
 
-
 const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY;
 
 // Initiate Payment
 const initiatePayment = async (req, res) => {
   try {
-    const { amount, currency, email, phone, fullName, redirectUrl } = req.body;
+    const { amount, currency, email, phone, fullName, address, country, zip } = req.body;
+
+    if (!amount || !currency || !email || !phone || !fullName || !address || !country || !zip) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required fields in the payload.' 
+      });
+    }
 
     const payload = {
       tx_ref: `TX-${Date.now()}`, // Unique transaction reference
@@ -226,8 +232,15 @@ const initiatePayment = async (req, res) => {
         phonenumber: phone,
         name: fullName,
       },
-      redirect_url: redirectUrl,
+      meta: {
+        address,
+        country,
+        zip,
+      },
+      redirect_url: "http://localhost:5500", // Adjust this to your frontend verification page
     };
+
+    console.log('Payload to Flutterwave:', payload);
 
     const response = await axios.post(
       "https://api.flutterwave.com/v3/payments",
@@ -235,23 +248,48 @@ const initiatePayment = async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${FLW_SECRET_KEY}`,
+          'Content-Type': 'application/json',
         },
       }
     );
 
-    res.status(200).json({
-      success: true,
-      message: "Payment link generated successfully.",
-      data: response.data,
-    });
+    if (response.data.status === 'success') {
+      const paymentLink = response.data.data.link;
+
+      // Include customer and meta information in the response
+      return res.status(200).json({
+        success: true,
+        message: 'Payment initiated successfully.',
+        checkoutUrl: paymentLink,
+        customer: {
+          email,
+          phone,
+          fullName,
+        },
+        meta: {
+          address,
+          country,
+          zip,
+        },
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: response.data.message || 'Failed to initiate payment.',
+      });
+    }
   } catch (error) {
-    res.status(500).json({
+    console.error('Flutterwave API Error:', error.response?.data || error.message);
+
+    return res.status(500).json({
       success: false,
-      message: "Payment initiation failed.",
+      message: 'Payment initiation failed.',
       error: error.message,
     });
   }
 };
+
+
 
 // Verify Payment
 const verifyPayment = async (req, res) => {
@@ -278,7 +316,7 @@ const verifyPayment = async (req, res) => {
         success: false,
         message: "Payment verification failed.",
       });
-    }
+    }                            
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -287,6 +325,6 @@ const verifyPayment = async (req, res) => {
     });
   }
 };
-
-
+      
+            
 module.exports = { addToCart, viewCart, removeFromCart, decreaseProductQuantity, clearCart, initiatePayment, verifyPayment };
