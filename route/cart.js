@@ -10,8 +10,8 @@ router.delete('/remove-a-product', verify, removeFromCart); // Remove items from
 router.post('/cart-decrease', verify, decreaseProductQuantity);
 router.delete('/clear-cart', verify, clearCart);
 router.post('/initiate-payment', initiatePayment); // Start payment
-
 router.get("/verify/:transactionId", verifyPayment);
+
 
 
 module.exports = router;
