@@ -216,7 +216,7 @@ const initiatePayment = async (req, res) => {
   try {
     const { amount, currency, email, phone, fullName, address, country, zip } = req.body;
 
-    if (!amount || !currency || !email || !phone || !fullName || !address || !country || !zip) {
+    if (!amount || !currency || !email || !phone || !fullName || !address || !country) {
       return res.status(400).json({ 
         success: false, 
         message: 'Missing required fields in the payload.' 
