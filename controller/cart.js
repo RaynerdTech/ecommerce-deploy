@@ -237,7 +237,7 @@ const initiatePayment = async (req, res) => {
         country,
         zip,
       },
-      redirect_url: "http://localhost:5500", // Adjust this to your frontend verification page
+      redirect_url: "https://at.raynerd.com.ng", // Adjust this to your frontend verification page
     };
 
     console.log('Payload to Flutterwave:', payload);
