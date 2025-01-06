@@ -16,14 +16,23 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS configuration - allow specific origin and credentials
+const allowedOrigins = ["http://127.0.0.1:5500", "https://at.raynerd.com.ng"];
+
 app.use(
   cors({
-    origin: "http://127.0.0.1:5500",
-    credentials: true, // Allow cookies to be sent and received
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true); // Allow the request
+      } else {
+        callback(new Error("Not allowed by CORS")); // Block the request
+      }
+    },
+    credentials: true, // Allow cookies
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"] // Add headers you expect
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"], // Expected headers
   })
 );
+
  
 // Connect to MongoDB
 mongoose
