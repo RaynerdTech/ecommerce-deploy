@@ -61,35 +61,48 @@ const login = async (req, res) => {
         }
 
         // Generate JWT token
-        const token = jwt.sign({ id: user._id, role: user.role, email: user.email, name: user.name, }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign(
+            { id: user._id, role: user.role, email: user.email, name: user.name },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
 
-        // Send the token as an HTTP-only cookie
-        res.cookie('user_token', token, { 
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Use secure cookie in production
-            sameSite: 'None', // Helps prevent CSRF attacks
-            maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        });    
+        // Determine if the request is from Safari
+        const userAgent = req.headers['user-agent'] || '';
+        const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
 
-        res.status(200).json({ message: "Login successful" });
+        if (isSafari) {
+            // For Safari, send the token in the response body
+            return res.status(200).json({ 
+                message: "Login successful", 
+                token 
+            });
+        } else {
+            // For other browsers, set the token as an HTTP-only cookie
+            res.cookie('user_token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Strict',
+                maxAge: 24 * 60 * 60 * 1000, // 24 hours
+            });
+            return res.status(200).json({ message: "Login successful" });
+        }
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: "Server error while logging in" });
-    }  
-}; 
- 
-    
-//LOGOUT 
+    }
+};
+
 const logout = (req, res) => {
     try {
         // Clear the cookie to log the user out
         res.clearCookie('user_token');
         return res.status(200).json({ message: `Successfully logged out, ${req.user.role}` });
     } catch (error) {
-        // Handle server errors
-        console.log(error)
+        console.error(error);
         return res.status(500).json({ error: "Failed to logout, please try again later" });
     }
-};  
+};
 
 
 
