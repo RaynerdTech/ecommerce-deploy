@@ -12,7 +12,32 @@ const addToCart = async (req, res) => {
             return res.status(400).json({ message: "Product ID and quantity are required" });
         }
 
-        const userId = req.user.id; // User ID from token
+        let userId;
+
+        // Check if the request is from Safari
+        const userAgent = req.headers['user-agent'] || '';
+        const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+
+        if (isSafari) {
+            // If Safari, get the token from localStorage and verify it manually
+            const token = req.body.token || ''; // Token should be passed in the request body from the frontend
+            if (!token) {
+                return res.status(401).json({ message: "You are not logged in" });
+            }
+
+            // Verify the token manually (same as your middleware)
+            jwt.verify(token, process.env.JWT_SECRET, (error, info) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+
+                // Get user info from token
+                userId = info.id; // User ID from the decoded token
+            });
+        } else {
+            // For non-Safari, use the req.user object populated by the cookie-based middleware
+            userId = req.user.id;
+        }
 
         // Find the product
         const product = await Product.findById(productId);
@@ -73,39 +98,92 @@ const addToCart = async (req, res) => {
 
 
 
+
 //VIEW CART
 const viewCart = async (req, res) => {
-    const userId = req.user.id;
-
     try {
+        let userId;
+
+        // Check for token in cookies or body
+        if (req.body.token) {
+            // Token sent in body (for Safari/localStorage workaround)
+            jwt.verify(req.body.token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+            });
+        } else if (req.cookies.user_token) {
+            // Token sent in cookies (default behavior for most browsers)
+            jwt.verify(req.cookies.user_token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+            });
+        } else {
+            return res.status(401).json({ message: "Authentication required" });
+        }
+
+        // Find the user's cart
         const cart = await Cart.findOne({ userId }).populate('items.productId', 'name price image');
         if (!cart) {
             return res.status(404).json({ message: 'Cart is empty' });
         }
 
         res.status(200).json({ cart });
-
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to retrieve cart' });
     }
 };
 
 
+
 //REMOVE CART 
 const removeFromCart = async (req, res) => {
-    const userId = req.user.id; // Assuming user is logged in
-    const { productId } = req.body;
-
     try {
+        let userId;
+
+        // Check for token in cookies or body
+        if (req.body.token) {
+            // Token sent in body (for Safari/localStorage workaround)
+            jwt.verify(req.body.token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+            });
+        } else if (req.cookies.user_token) {
+            // Token sent in cookies (default behavior for most browsers)
+            jwt.verify(req.cookies.user_token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+            });
+        } else {
+            return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const { productId } = req.body;
+
+        // Check for product ID in the request
+        if (!productId) {
+            return res.status(400).json({ message: "Product ID is required" });
+        }
+
+        // Find the user's cart
         const cart = await Cart.findOne({ userId });
 
         if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
+            return res.status(404).json({ message: "Cart not found" });
         }
 
+        // Find the product in the cart
         const itemIndex = cart.items.findIndex(item => item.productId.toString() === productId);
         if (itemIndex === -1) {
-            return res.status(404).json({ message: 'Product not found in cart' });
+            return res.status(404).json({ message: "Product not found in cart" });
         }
 
         // Remove the product from the cart
@@ -114,31 +192,63 @@ const removeFromCart = async (req, res) => {
         // Recalculate total price
         cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
 
+        // Save the updated cart
         await cart.save();
-        res.status(200).json({ message: 'Product removed from cart', cart });
 
+        res.status(200).json({ message: "Product removed from cart", cart });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to remove product from cart' });
+        console.error(error);
+        res.status(500).json({ error: "Failed to remove product from cart" });
     }
 };
 
 
+
 //DECREASE CART 
 const decreaseProductQuantity = async (req, res) => {
-    const userId = req.user.id; // Assuming user is logged in
-    const { productId } = req.body; // Product ID to decrease quantity
-
     try {
+        let userId;
+
+        // Check for token in body or cookies
+        if (req.body.token) {
+            // Token in body (for Safari/localStorage workaround)
+            jwt.verify(req.body.token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+            });
+        } else if (req.cookies.user_token) {
+            // Token in cookies (default behavior)
+            jwt.verify(req.cookies.user_token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+            });
+        } else {
+            return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const { productId } = req.body;
+
+        // Validate product ID
+        if (!productId) {
+            return res.status(400).json({ message: "Product ID is required" });
+        }
+
+        // Find the user's cart
         const cart = await Cart.findOne({ userId });
 
         if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
+            return res.status(404).json({ message: "Cart not found" });
         }
 
+        // Find the product in the cart
         const itemIndex = cart.items.findIndex(item => item.productId.toString() === productId);
 
         if (itemIndex === -1) {
-            return res.status(404).json({ message: 'Product not found in cart' });
+            return res.status(404).json({ message: "Product not found in cart" });
         }
 
         const item = cart.items[itemIndex];
@@ -147,60 +257,86 @@ const decreaseProductQuantity = async (req, res) => {
             // Decrease quantity
             item.quantity -= 1;
 
-            // Fetch product price from the Product model
+            // Fetch product price
             const product = await Product.findById(productId);
 
-            // Update price based on new quantity
+            // Update item price based on quantity
             item.price = item.quantity * product.price;
 
-            // Recalculate total price for the entire cart
+            // Recalculate total cart price
             cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
 
             await cart.save();
         } else {
-            // If quantity is 1, remove the product from cart
+            // If quantity is 1, remove item from cart
             cart.items.splice(itemIndex, 1);
 
-            // Recalculate total price
+            // Recalculate total cart price
             cart.totalPrice = cart.items.reduce((total, item) => total + item.price, 0);
 
             await cart.save();
         }
 
-        // Populate product details (name, image, etc.)
-        const updatedCart = await Cart.findById(cart._id).populate('items.productId', 'name image');
+        // Populate updated cart with product details
+        const updatedCart = await Cart.findById(cart._id).populate(
+            'items.productId',
+            'name image price'
+        );
 
-        res.status(200).json({ message: 'Product quantity decreased by 1', cart: updatedCart });
-
+        res.status(200).json({ message: "Product quantity decreased by 1", cart: updatedCart });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Failed to update product quantity in cart' });
+        res.status(500).json({ error: "Failed to update product quantity in cart" });
     }
 };
 
 
 
 
+
 //CLEAR ENTIRE CART ONCE
 const clearCart = async (req, res) => {
-    const userId = req.user.id; // Assuming user is logged in
-
     try {
+        let userId;
+
+        // Check for token in body or cookies
+        if (req.body.token) {
+            // Token in body (for Safari/localStorage workaround)
+            jwt.verify(req.body.token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+            });
+        } else if (req.cookies.user_token) {
+            // Token in cookies (default behavior)
+            jwt.verify(req.cookies.user_token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+            });
+        } else {
+            return res.status(401).json({ message: "Authentication required" });
+        }
+
+        // Find the user's cart
         const cart = await Cart.findOne({ userId });
 
         if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
+            return res.status(404).json({ message: "Cart not found" });
         }
 
-        // Clear all items in the cart
+        // Clear all items and reset total price
         cart.items = [];
         cart.totalPrice = 0;
 
         await cart.save();
-        res.status(200).json({ message: 'Cart cleared', cart });
 
+        res.status(200).json({ message: "Cart cleared", cart });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to clear cart' });
+        console.error(error);
+        res.status(500).json({ error: "Failed to clear cart" });
     }
 };
 
