@@ -6,7 +6,7 @@ const axios = require('axios');
 
 const addToCart = async (req, res) => {
     try {
-        const { productId, quantity } = req.body;
+        const { productId, quantity } = req.body; 
 
         if (!productId || !quantity) {
             return res.status(400).json({ message: "Product ID and quantity are required" });
