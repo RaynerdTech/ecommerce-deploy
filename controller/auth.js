@@ -13,7 +13,7 @@ const register = async (req, res) => {
 
         // Create a new user
         const newUser = new User({
-            name,
+            name, 
             email,
             password, // Password hashing is already handled in the schema
             gender,
