@@ -216,7 +216,7 @@ const initiatePayment = async (req, res) => {
   try {
     const { amount, currency, email, phone, fullName, address, country, zip } = req.body;
 
-    if (!amount || !currency || !email || !phone || !fullName || !address || !country || !zip) {
+    if (!amount || !currency || !email || !phone || !fullName || !address || !country) {
       return res.status(400).json({ 
         success: false, 
         message: 'Missing required fields in the payload.' 
@@ -237,7 +237,7 @@ const initiatePayment = async (req, res) => {
         country,
         zip,
       },
-      redirect_url: "http://localhost:5500", // Adjust this to your frontend verification page
+      redirect_url: "https://at.raynerd.com.ng", // Adjust this to your frontend verification page
     };
 
     console.log('Payload to Flutterwave:', payload);
