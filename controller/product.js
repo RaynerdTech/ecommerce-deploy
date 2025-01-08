@@ -4,28 +4,55 @@ const Product = require('../models/productSchema');
 // Create a new product (restricted to logged-in users)
 const createProduct = async (req, res) => {
     try {
-        // Get user info from the verified token
-        const userId = req.user.id;
-        
-        // Ensure only admin users can create products (optional, based on role)
-        if (req.user.role !== 'Admin' && req.user.role !== 'SuperAdmin') {
-            return res.status(403).json({ message: "Access denied: You are not authorized to create products." });
+        let userId, userRole;
+
+        // Check for token in body or cookies
+        if (req.body.token) {
+            jwt.verify(req.body.token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+                userRole = decoded.role;
+            });
+        } else if (req.cookies.user_token) {
+            jwt.verify(req.cookies.user_token, process.env.JWT_SECRET, (error, decoded) => {
+                if (error) {
+                    return res.status(403).json({ message: "Invalid or expired token" });
+                }
+                userId = decoded.id;
+                userRole = decoded.role;
+            });
+        } else {
+            return res.status(401).json({ message: "Authentication required" });
         }
 
-        // Create a new product using spread operator
+        // Ensure only admin users can create products
+        if (userRole !== "Admin" && userRole !== "SuperAdmin") {
+            return res
+                .status(403)
+                .json({ message: "Access denied: You are not authorized to create products." });
+        }
+
+        // Create a new product using the provided data
         const newProduct = new Product({
-            creatorId: userId, // Track which user created the product
-            ...req.body // Spread operator to include all other properties
+            creatorId: userId, // Associate the product with the user who created it
+            ...req.body, // Include additional product properties from the request body
         });
 
-        // Save product in the database
+        // Save the product in the database
         const savedProduct = await newProduct.save();
-        res.status(201).json({ message: `Product created successfully, ${req.user.role}`, product: savedProduct });
+
+        res.status(201).json({
+            message: `Product created successfully by ${userRole}`,
+            product: savedProduct,
+        });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Server error while creating product" });
-        console.log(error)
     }
 };
+
 
 
 const productQuery = async (req, res) => {
