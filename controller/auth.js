@@ -13,7 +13,7 @@ const register = async (req, res) => {
 
         // Create a new user
         const newUser = new User({
-            name, 
+            name,
             email,
             password, // Password hashing is already handled in the schema
             gender,
@@ -61,38 +61,40 @@ const login = async (req, res) => {
         }
 
         // Generate JWT token
-        const token = jwt.sign({ id: user._id, role: user.role, email: user.email, name: user.name, }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign(
+            { id: user._id, role: user.role, email: user.email, name: user.name },
+            process.env.JWT_SECRET,
+            { expiresIn: "24h" }
+        );
 
-        // Send the token as an HTTP-only cookie
-        res.cookie('user_token', token, { 
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Use secure cookie in production
-            sameSite: 'None', // Helps prevent CSRF attacks
-            maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        });    
-
-        res.status(200).json({ message: "Login successful" });
+        // Respond with the token for client-side storage
+        res.status(200).json({
+            message: "Login successful",
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email, 
+                role: user.role,
+            },
+        });
     } catch (err) {
         res.status(500).json({ error: "Server error while logging in" });
-    }  
-}; 
+    }
+};
  
     
 //LOGOUT 
 const logout = (req, res) => {
     try {
-        // Clear the cookie to log the user out
-        res.clearCookie('user_token');
+        // Respond with a success message
         return res.status(200).json({ message: `Successfully logged out, ${req.user.role}` });
     } catch (error) {
         // Handle server errors
-        console.log(error)
+        console.error(error);
         return res.status(500).json({ error: "Failed to logout, please try again later" });
     }
-};  
-
-
-
+};
 
 
 

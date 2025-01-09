@@ -1,16 +1,19 @@
 const jwt = require("jsonwebtoken");
 
 const verify = (req, res, next) => {
-  // Get the JWT token from the cookie
-  const { user_token } = req.cookies;
+  // Get the JWT token from the Authorization header
+  const authHeader = req.headers.authorization;
 
-  // Check if the token is missing
-  if (!user_token) {
+  // Check if the Authorization header is missing
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "You are not logged in" });
   }
 
+  // Extract the token from the Authorization header
+  const token = authHeader.split(" ")[1];
+
   // Verify the token
-  jwt.verify(user_token, process.env.JWT_SECRET, (error, info) => {
+  jwt.verify(token, process.env.JWT_SECRET, (error, info) => {
     if (error) {
       // If the token is invalid or expired, send a 403 Forbidden error
       return res.status(403).json({ message: "Invalid or expired token" });
@@ -18,7 +21,7 @@ const verify = (req, res, next) => {
 
     // Store the user info in the request object for use in the next middleware
     req.user = info;
-    console.log(info)
+    console.log(info);
 
     // Proceed to the next middleware or route handler
     next();
