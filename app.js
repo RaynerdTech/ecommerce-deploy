@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS configuration - allow specific origin and credentials
-const allowedOrigins = ["http://127.0.0.1:5500", "https://at.raynerd.com.ng"];
+const allowedOrigins = ["http://127.0.0.1:5500", "https://shopnow.raynerd.com.ng"];
 
 app.use(
   cors({
