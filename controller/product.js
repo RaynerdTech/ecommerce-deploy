@@ -93,5 +93,22 @@ const productQuery = async (req, res) => {
 };
 
    
-module.exports = { createProduct, productQuery, likeProduct };
+const getUserLikedProducts = async (req, res) => {
+  try {
+      const userId = req.user.id;
+
+      // Find only products where the likes array contains the specific userId
+      const likedProducts = await Product.find({ likes: { $in: [userId] } }).select("_id");
+
+      // Send only an array of liked product IDs
+      res.status(200).json(likedProducts.map(product => product._id.toString()));
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error fetching liked products" });
+  }
+};
+
+ 
+module.exports = { createProduct, productQuery, likeProduct, getUserLikedProducts };
+
 
