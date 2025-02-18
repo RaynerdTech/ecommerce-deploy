@@ -1,13 +1,11 @@
 // routes/productRoutes.js
 const express = require('express');
 const router = express.Router();
-const { createProduct, productQuery, likeProduct} = require('../controller/product');
-const { verify } = require('../middleware/verify'); 
+const { createProduct, productQuery } = require('../controller/product'); // Adjust the path based on your structure
+const { verify } = require('../middleware/verify'); // Import the verify middleware
 
-router.post('/create-product', verify, createProduct); 
-router.put('/productlike/:id', verify, likeProduct); 
+// Route for creating a new product
+router.post('/create-product', verify, createProduct); // Ensure user is verified before 
 router.get('/products', productQuery);
 
 module.exports = router;
-
- 
