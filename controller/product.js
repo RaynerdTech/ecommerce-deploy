@@ -63,4 +63,35 @@ const productQuery = async (req, res) => {
     }
   };
   
-module.exports = { createProduct, productQuery };
+  const likeProduct = async (req, res) => {
+    try {
+        const productId = req.params.id; // Get product ID from params
+        const userId = req.user.id; // Get user ID from JWT
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        const likeIndex = product.likes.indexOf(userId);
+
+        if (likeIndex === -1) {
+            // If user hasn't liked the product, add their ID
+            product.likes.push(userId);
+        } else {
+            // If user already liked the product, remove their ID (unlike)
+            product.likes.splice(likeIndex, 1);
+        }
+
+        await product.save();
+
+        res.status(200).json({ message: "Product like status updated", likes: product.likes });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Server error while processing like/unlike" });
+    }
+};
+
+   
+module.exports = { createProduct, productQuery, likeProduct };
+
